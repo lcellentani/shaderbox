@@ -1,0 +1,121 @@
+@media screen and (max-width:1279px)
+{
+    body { font-size:9px; }
+    div#content { width: 1010px; top:58px; }
+}
+
+@media screen and (min-width:1280px) and (max-width:1439px)
+{
+    body { font-size:11px; }
+    div#content { width: 1260px; top:64px; }
+}
+
+@media screen and (min-width:1440px) and (max-width:1919px)
+{
+    body { font-size:12px; }
+    div#content { width: 1420px; height:730px; top:56px; }
+}
+
+@media screen and (min-width:1920px) and (max-width:2559px)
+{
+    body { font-size:12px; }
+    div#content { width: 1800px; height:880px; top:60px; }
+}
+
+@media screen and (min-width:2560px) 
+{
+    body { font-size: 18px; }
+    div#content { width: 2400px; height: 1180px; top: 64px; }
+}
+
+body {
+    background: #272822;
+    top:0%;
+    left:0%;
+    width:100%;
+    height:100%;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    overflow: hidden;
+}
+
+button {
+    padding: 8px 12px 8px 12px;
+    
+    border: none;
+    border-radius: 5px;
+    margin-right: 5px;
+
+    color: #ffffff;
+    background-color: #000000;
+    opacity: 0.5;
+
+    font-family: Monospace;
+    font-size: 12px;
+    font-weight: bold;
+
+    cursor: pointer;
+    text-decoration: none;
+}
+
+button:hover {
+    opacity: 1;
+    box-shadow: 0 0 2px #FFF;
+}
+
+.CodeMirror {
+    color: white;
+    text-shadow: rgba(0, 0, 0, 1) 0px 1px 2px;
+    background-color: transparent;
+    position: absolute; left: 25px; top: 75px;
+    padding: 12px;
+    border: solid 1px transparent;
+    border-radius: 5px;
+    line-height: 1.1em;
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: bold;
+    visibility: visible;
+  
+    /* transition between transparent and semi-transparent black on hover */
+    transition: background-color 500ms;
+    -webkit-transition: background-color 500ms;
+    -o-transition: background-color 500ms;
+    -moz-transition: background-color 500ms;
+    -ms-transition: background-color 500ms;
+}
+
+.CodeMirror:hover {
+    background-color:rgba(0,0,0,.5);
+    border: solid 1px rgba(128,128,128,.4);
+}
+
+.CodeMirror-gutters {
+    border-right: 0px !important;
+    background-color: transparent !important;
+}
+
+.CodeMirror-overlayscroll-vertical {
+    right: 20px;
+}
+
+.cm-s-monokai .CodeMirror-matchingbracket {
+    color: rgb(148, 255, 148) !important;
+}
+
+.cm-s-monokai .CodeMirror-nonmatchingbracket {
+    color: rgb(255, 129, 129) !important;
+}
+
+.CodeMirror .resizer {
+	display: block;
+	position: absolute;
+	bottom: 3px;
+	right: 3px;
+	width: 11px;
+	height: 11px;
+	background-image: url('resizer.png');
+	background-repeat: no-repeat;
+	cursor: se-resize;
+}
