@@ -1,4 +1,5 @@
 import { GLSLCanvas } from './src/glslcanvas.js'
+import { subscribeMixin } from './src/utils/mixin.js';
 
 window.addEventListener("hashchange", function() {
     init()
@@ -6,7 +7,6 @@ window.addEventListener("hashchange", function() {
 
 window.onload = function() {
     init();
-    //window.preview.render();
 };
 
 function removeElementsByClass(className) {
@@ -26,59 +26,18 @@ function init() {
     window.compileOnChangeCode = true;
     onWindowResize();
 
-    /*let fragShader = "";
-    let fragFile = "";
-
-    if( window.location.hash === "" ){
-        fragShader = "void main() {\n\tgl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);\n}";
-    } else {
-
-    }
-
-    let canvasElement = document.getElementById("canvas");
-    if (canvasElement && fragShader !== ""){
-        canvasElement.setAttribute("data-fragment", fragShader);
-		
-        window.preview = new GLSLCanvas(canvasElement);
-
-        //if (imgs.length > 0) {
-        //    var textureList = "";
-        //    for(i in imgs){
-        //        textureList += imgs[i];
-        //        textureList += (i < imgs.length-1)?",":"";
-        //    }
-        //    demoCanvas.setAttribute("data-textures",textureList);
-        //    console.log("data-textures: " + textureList);
-        //}
-        //loadShaders();
-    }
-
-    let editorElement = document.getElementById("editor");
-    if (editorElement) {
-        let editor = CodeMirror(editorElement, {
-            value: fragShader,
-            lineNumbers: true,
-            matchBrackets: true,
-            mode: "x-shader/x-fragment",
-            keyMap: "sublime",
-            autoCloseBrackets: true,
-            extraKeys: {"Ctrl-Space": "autocomplete"},
-            showCursorWhenSelecting: true,
-            theme: "monokai",
-            indentUnit: 4
-        });
-        editor.on("change", function() {
-            //window.preview.load(editor.getValue());
-        });
-    }*/
-
     function initPreview() {
-        let fragShader = "";
-        if( window.location.hash === "" ){
-            fragShader = "void main() {\n\tgl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);\n}";
-        } else {
+        let fragShader = `
+precision mediump float;
 
-        }
+uniform vec3 iResolution;
+uniform float iTime;
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+    vec3 col = 0.5 + 0.5 * cos(iTime + uv.xyx + vec3(0, 2, 4));
+    gl_FragColor = vec4(col, 1.0);
+}`;
 
         let canvas = document.createElement("canvas");
         canvas.id = "canvas";
@@ -99,7 +58,33 @@ function init() {
         //}
         //loadShaders();
 
+        window.preview.on("loadProgram", (args) => {
+            console.log("program compiled ok");
+            let compileButton = document.getElementById("compile");
+            if (compileButton) {
+                compileButton.style.color = "#00ff00";
+                compileButton.textContent = "compiled successfully";
+            }
+        });
+        window.preview.on("gl_error_compile", (arg) => {
+            console.log("program compiled fail");
+            let compileButton = document.getElementById("compile");
+            if (compileButton) {
+                compileButton.style.color = "#ff0000";
+                compileButton.textContent = "compiled failed";
+            }
+        });
+        window.preview.on("gl_error_link", (arg) => {
+            console.log("program compiled fail");
+            let compileButton = document.getElementById("compile");
+            if (compileButton) {
+                compileButton.style.color = "#ff0000";
+                compileButton.textContent = "compiled failed";
+            }
+        });
+
         window.editor.setValue(fragShader);
+        compilePreview();
     }
 
     function initEditor() {
@@ -121,7 +106,6 @@ function init() {
                 clearTimeout(window.compileTimer);
                 window.compileTimer = setTimeout(compilePreview, 500);
             }
-            //window.preview.load(editor.getValue());
         });
         window.editor = editor;
     
@@ -209,10 +193,8 @@ function init() {
     }
 
     function compilePreview() {
-        let compileButton = document.getElementById("compile");
-
-        compileButton.style.color = "#00ff00";
-        compileButton.textContent = "compiled successfully";
+        let shaderCode = window.editor.getValue();
+        window.preview.loadProgram(shaderCode);
     }
     
     function isCodeVisible() {

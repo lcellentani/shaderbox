@@ -1,4 +1,4 @@
-import { create3DContext, createProgram, createShader, parseUniforms } from './gl/gl.js';
+import { create3DContext, createProgram, createShader, deleteProgram, parseUniforms } from './gl/gl.js';
 import Texture from './gl/texture.js';
 import { isCanvasVisible, isDiff } from './utils/common.js';
 import { subscribeMixin } from './utils/mixin.js';
@@ -72,7 +72,7 @@ void main(){
             this.vertexString = canvas.getAttribute('data-vertex');
         }
 
-        this.load();
+        this.loadProgram();
 
         if (!this.program) {
             return;
@@ -100,6 +100,7 @@ void main(){
 
         let sandbox = this;
         function RenderLoop() {
+            console.log("RenderLoop!");
             if (sandbox.nMouse > 1) {
                 sandbox.setMouse(mouse);
             }
@@ -135,7 +136,7 @@ void main(){
         this.gl = null;
     }
 
-    load(fragString, vertString) {
+    loadProgram(fragString, vertString) {
         if (vertString) {
             this.vertexString = vertString;
         }
@@ -144,23 +145,27 @@ void main(){
         }
 
         this.animated = false;
-        this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
-        this.nTime = (this.fragmentString.match(/u_time/g) || []).length;
-        this.nDate = (this.fragmentString.match(/u_date/g) || []).length;
-        this.nMouse = (this.fragmentString.match(/u_mouse/g) || []).length;
+        this.nDelta = (this.fragmentString.match(/iTimeDelta/g) || []).length;
+        this.nTime = (this.fragmentString.match(/iTime/g) || []).length;
+        this.nDate = (this.fragmentString.match(/iDate/g) || []).length;
+        this.nFrame = (this.fragmentString.match(/iFrame/g) || []).length;
+        this.nMouse = (this.fragmentString.match(/iMouse/g) || []).length;
         this.animated = this.nDate > 1 || this.nTime > 1 || this.nMouse > 1;
+
+        this.frameCount = 0;
+
+        if (this.program) {
+            deleteProgram(this.program);
+            this.program = null;
+        }
 
         let vertexShader = createShader(this, this.vertexString, this.gl.VERTEX_SHADER);
         let fragmentShader = createShader(this, this.fragmentString, this.gl.FRAGMENT_SHADER);
 
-        if (!fragmentShader) {
-            fragmentShader = createShader(this, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', this.gl.FRAGMENT_SHADER);
-            this.isValid = false;
-        } else {
-            this.isValid = true;
-        }
+        this.isValid = fragmentShader != null;
 
         let program = createProgram(this, [vertexShader, fragmentShader]);//, [0,1],['a_texcoord','a_position']);
+        
         this.gl.useProgram(program);
 
         // this.gl.detachShader(program, vertexShader);
@@ -172,7 +177,8 @@ void main(){
         this.change = true;
 
         // Trigger event
-        this.trigger('load', {});
+        this.trigger('loadProgram', {});
+        console.log("loadProgram<<<");
 
         this.forceRender = true;
         this.render();
@@ -226,10 +232,10 @@ void main(){
             mouse.x && mouse.x >= rect.left && mouse.x <= rect.right &&
             mouse.y && mouse.y >= rect.top && mouse.y <= rect.bottom) {
 
-            let mouse_x = (mouse.x - rect.left ) * this.realToCSSPixels;
-            let mouse_y = (this.canvas.height - (mouse.y - rect.top) * this.realToCSSPixels);
+            let mouse_x = (mouse.x - rect.left ) * this.devicePixelRatio;
+            let mouse_y = (this.canvas.height - (mouse.y - rect.top) * this.devicePixelRatio);
 
-            this.uniform('2f', 'vec2', 'u_mouse', mouse_x, mouse_y);
+            this.uniform('4f', 'vec4', 'iMouse', mouse_x, mouse_y, 0, 0);
         }
     }
 
@@ -255,22 +261,29 @@ void main(){
 
     render() {
         this.visible = isCanvasVisible(this.canvas);
+        if (!this.program) {
+            return;
+        }
         if (this.forceRender  || (this.visible && !this.paused)) {
             let date = new Date();
             let now = performance.now();
-            this.timeDelta =  (now - this.timePrev) / 1000.0;
+            this.timeDelta = (now - this.timePrev) / 1000.0;
             this.timePrev = now;
+            this.frameCount++;
 
             if (this.nDelta > 1) {
-                this.uniform('1f', 'float', 'u_delta', this.timeDelta);
+                this.uniform('1f', 'float', 'iTimeDelta', this.timeDelta);
             }
             if (this.nTime > 1 ) {
-                this.uniform('1f', 'float', 'u_time', (now - this.timeLoad) / 1000.0);
+                this.uniform('1f', 'float', 'iTime', (now - this.timeLoad) / 1000.0);
             }
             if (this.nDate) {
-                this.uniform('4f', 'float', 'u_date', date.getFullYear(), date.getMonth(), date.getDate(), date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds() + date.getMilliseconds() * 0.001 );
+                this.uniform('4f', 'float', 'iDate', date.getFullYear(), date.getMonth(), date.getDate(), date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds() + date.getMilliseconds() * 0.001 );
             }
-            this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
+            if (this.nFrame > 1) {
+                this.uniform('1f', 'float', 'iFrame', this.frameCount);
+            }
+            this.uniform('3f', 'vec3', 'iResolution', this.canvas.width, this.canvas.height, 0);
             
             var factor = Math.sin(((now - this.timeLoad) * 0.2) * Math.PI/180);
             this.gl.clearColor(factor * 0.7 + 0.3, factor * 0.7 + 0.3, 0.0, 1.0);

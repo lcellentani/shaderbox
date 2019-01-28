@@ -23,14 +23,14 @@ export function createShader(main, source, type, offset) {
 
     if (!compiled) {
         lastError = gl.getShaderInfoLog(shader);
-        console.error('*** Error compiling shader ' + shader + ':' + lastError);
-        //main.trigger('error', {
-        //    shader: shader,
-        //    source: source,
-        //    type: type,
-        //    error: lastError,
-        //    offset: offset || 0
-        //});
+        //console.error('*** Error compiling shader ' + shader + ':' + lastError);
+        main.trigger('gl_error_compile', {
+            shader: shader,
+            source: source,
+            type: type,
+            error: lastError,
+            offset: offset || 0
+        });
         gl.deleteShader(shader);
         return null;
     }
@@ -55,12 +55,22 @@ export function createProgram(main, shaders, optAttribs, optLocations) {
     let linked = gl.getProgramParameter(program, gl.LINK_STATUS);
     if (!linked) {
         lastError = gl.getProgramInfoLog(program);
-        console.log('Error in program linking:' + lastError);
+        main.trigger('gl_error_link', {
+            program: program,
+            error: lastError
+        });
         gl.deleteProgram(program);
         return null;
     }
 
     return program;
+}
+
+export function deleteProgram(main, program) {
+    let gl = main.gl;
+    if (program) {
+        gl.deleteProgram(program);
+    }
 }
 
 // By Brett Camber on
