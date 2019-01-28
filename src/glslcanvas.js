@@ -178,7 +178,7 @@ void main(){
         this.render();
     }
 
-    loadTexture (name, urlElementOrData, options) {
+    loadTexture(name, urlElementOrData, options) {
         if (!options) {
             options = {};
         }

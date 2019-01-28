@@ -23,9 +23,8 @@ function init() {
     initToolbar();
     initPreview();
     
-    window.editor.setValue("void main(){\n}");
-
     window.compileOnChangeCode = true;
+    onWindowResize();
 
     /*let fragShader = "";
     let fragFile = "";
@@ -74,7 +73,33 @@ function init() {
     }*/
 
     function initPreview() {
+        let fragShader = "";
+        if( window.location.hash === "" ){
+            fragShader = "void main() {\n\tgl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);\n}";
+        } else {
 
+        }
+
+        let canvas = document.createElement("canvas");
+        canvas.id = "canvas";
+		canvas.style.display = "block";
+        canvas.setAttribute("data-fragment", fragShader);
+        document.body.appendChild(canvas);
+
+        window.preview = new GLSLCanvas(canvas);
+
+        //if (imgs.length > 0) {
+        //    var textureList = "";
+        //    for(i in imgs){
+        //        textureList += imgs[i];
+        //        textureList += (i < imgs.length-1)?",":"";
+        //    }
+        //    demoCanvas.setAttribute("data-textures",textureList);
+        //    console.log("data-textures: " + textureList);
+        //}
+        //loadShaders();
+
+        window.editor.setValue(fragShader);
     }
 
     function initEditor() {
@@ -90,7 +115,7 @@ function init() {
             indentUnit: 4,
             scrollbarStyle: "overlay"
         });
-        editor.getWrapperElement().style.display = '';
+        editor.getWrapperElement().style.display = "";
         editor.on("change", function() {
             if (window.compileOnChangeCode) {
                 clearTimeout(window.compileTimer);
@@ -110,75 +135,74 @@ function init() {
         temp.minHeight = 100;
         temp.maxWidth = 100;
         temp.maxHeight = 100;
-        temp.element = document.createElement('div');
-        temp.element.className = 'resizer';
+        temp.element = document.createElement("div");
+        temp.element.className = "resizer";
         editor.getWrapperElement().appendChild(temp.element);
         window.resizer = temp;
     
-        resizer.element.addEventListener('mousedown', function(event) {
+        resizer.element.addEventListener("mousedown", function(event) {
             dragStarted(event);
         }, false);
     
-        document.addEventListener('mouseup', function(event) {
+        document.addEventListener("mouseup", function(event) {
             dragEnded(event);
         }, false);
     
-        document.addEventListener('mouseleave', function(event) {
+        document.addEventListener("mouseleave", function(event) {
             dragEnded(event)
         }, false);
     
-        document.addEventListener( 'mousemove', function (event) {
+        document.addEventListener("mousemove", function (event) {
             dragMoving(event);
         }, false);
     
-        onWindowResize();
-        window.addEventListener('resize', onWindowResize, false);
+        window.addEventListener("resize", onWindowResize, false);
     }
 
     function initToolbar() {
-        let toolbar = document.createElement('div');
-        toolbar.style.position = 'absolute';
-        toolbar.style.top = '25px';
-        toolbar.style.left = '25px';
+        let toolbar = document.createElement("div");
+        toolbar.style.position = "absolute";
+        toolbar.style.top = "25px";
+        toolbar.style.left = "25px";
         document.body.appendChild(toolbar);
 
-        let hideButton = document.createElement('button');
-        hideButton.textContent = 'hide code';
-        hideButton.addEventListener('click', function (event) {
+        let hideButton = document.createElement("button");
+        hideButton.textContent = "hide code";
+        hideButton.addEventListener("click", function (event) {
             let compileButton = document.getElementById("compile");
             let autoButton = document.getElementById("auto");
             if (isCodeVisible()) {
-                hideButton.textContent = 'show code';
-                window.editor.getWrapperElement().style.display = 'none';
-                compileButton.style.visibility = 'hidden';
-                autoButton.style.visibility = 'hidden';
+                hideButton.textContent = "show code";
+                window.editor.getWrapperElement().style.display = "none";
+                compileButton.style.visibility = "hidden";
+                autoButton.style.visibility = "hidden";
             } else {
-                hideButton.textContent = 'hide code';
-                window.editor.getWrapperElement().style.display = '';
-                compileButton.style.visibility = 'visible';
-                autoButton.style.visibility = 'visible';
+                hideButton.textContent = "hide code";
+                window.editor.getWrapperElement().style.display = "";
+                compileButton.style.visibility = "visible";
+                autoButton.style.visibility = "visible";
             }
         }, false);
         toolbar.appendChild(hideButton);
         
-        let autoButton = document.createElement('button');
+        let autoButton = document.createElement("button");
         autoButton.id = "auto";
-        autoButton.textContent = 'auto on';
-        autoButton.addEventListener('click', function (event) {
+        autoButton.textContent = "auto on";
+        autoButton.addEventListener("click", function (event) {
             window.compileOnChangeCode = !window.compileOnChangeCode;
-            autoButton.textContent = 'auto off';
+            autoButton.textContent = "auto off";
             clearTimeout(window.compileTimer);
             if (window.compileOnChangeCode) {
-                autoButton.textContent = 'auto on';
+                autoButton.textContent = "auto on";
                 window.compileTimer = setTimeout(compilePreview, 500);
             }
         }, false);
         toolbar.appendChild(autoButton);
 
-        let compileButton = document.createElement('button');
+        let compileButton = document.createElement("button");
         compileButton.id = "compile";
-        compileButton.textContent = 'compile';
-        compileButton.addEventListener('click', function (event) {
+        compileButton.textContent = "compile";
+        compileButton.addEventListener("click", function (event) {
             compilePreview();
         }, false);
         toolbar.appendChild(compileButton);
@@ -187,13 +211,13 @@ function init() {
     function compilePreview() {
         let compileButton = document.getElementById("compile");
 
-        compileButton.style.color = '#00ff00';
-        compileButton.textContent = 'compiled successfully';
+        compileButton.style.color = "#00ff00";
+        compileButton.textContent = "compiled successfully";
     }
     
     function isCodeVisible() {
         if (window.editor) {
-            return window.editor.getWrapperElement().style.display !== 'none';
+            return window.editor.getWrapperElement().style.display !== "none";
         }
         return false;
     }
@@ -228,8 +252,8 @@ function init() {
             resizer.currentHeight = Math.max(Math.min(clientY - resizer.offsetMouseY, resizer.maxHeight), resizer.minWidth);
             let editor = window.editor;
             if (editor) {
-                editor.getWrapperElement().style.width = resizer.currentWidth + 'px';
-                editor.getWrapperElement().style.height = resizer.currentHeight + 'px';
+                editor.getWrapperElement().style.width = resizer.currentWidth + "px";
+                editor.getWrapperElement().style.height = resizer.currentHeight + "px";
                 editor.refresh();
             }
             event.preventDefault();
@@ -241,7 +265,7 @@ function init() {
         if (resizer) {
             resizer.isResizing = false;
         }
-        document.body.style.cursor = 'default';
+        document.body.style.cursor = "default";
     }
 
     function onWindowResize(event) {
@@ -265,10 +289,16 @@ function init() {
 
         let editor = window.editor;
         if (editor) {
-            editor.getWrapperElement().style.top = '75px';
-            editor.getWrapperElement().style.left = '25px';
-            editor.getWrapperElement().style.width = resizer.currentWidth + 'px';
-            editor.getWrapperElement().style.height = resizer.currentHeight + 'px';
+            editor.getWrapperElement().style.top = "75px";
+            editor.getWrapperElement().style.left = "25px";
+            editor.getWrapperElement().style.width = resizer.currentWidth + "px";
+            editor.getWrapperElement().style.height = resizer.currentHeight + "px";
+        }
+
+        let canvas = document.getElementById("canvas");
+        if (canvas) {
+            canvas.style.width = window.innerWidth + "px";
+            canvas.style.height = window.innerHeight + "px";
         }
     }
 }
