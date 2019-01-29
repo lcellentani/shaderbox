@@ -153,28 +153,24 @@ void main(){
 
         this.frameCount = 0;
 
-        if (this.program) {
-            deleteProgram(this.program);
-            this.program = null;
-        }
-
         let vertexShader = createShader(this, this.vertexString, this.gl.VERTEX_SHADER);
         let fragmentShader = createShader(this, this.fragmentString, this.gl.FRAGMENT_SHADER);
 
         this.isValid = fragmentShader != null;
 
         let program = createProgram(this, [vertexShader, fragmentShader]);//, [0,1],['a_texcoord','a_position']);
+        if (program) {
+            this.gl.useProgram(program);
+
+            // this.gl.detachShader(program, vertexShader);
+            // this.gl.detachShader(program, fragmentShader);
+            this.gl.deleteShader(vertexShader);
+            this.gl.deleteShader(fragmentShader);
+
+            this.program = program;
+            this.change = true;
+        }
         
-        this.gl.useProgram(program);
-
-        // this.gl.detachShader(program, vertexShader);
-        // this.gl.detachShader(program, fragmentShader);
-        this.gl.deleteShader(vertexShader);
-        this.gl.deleteShader(fragmentShader);
-
-        this.program = program;
-        this.change = true;
-
         // Trigger event
         this.trigger('loadProgram', {});
 
@@ -339,6 +335,9 @@ void main(){
     }
 
     uniform(method, type, name, ...value) {
+        if (!this.program) {
+            return;
+        }
         this.uniforms[name] = this.uniforms[name] || {}; 
         let uniform = this.uniforms[name];
         let change = isDiff(uniform.value, value);
