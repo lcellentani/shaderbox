@@ -1,5 +1,4 @@
 import { GLSLCanvas } from './src/glslcanvas.js'
-import { subscribeMixin } from './src/utils/mixin.js';
 
 window.addEventListener("hashchange", function() {
     init()
@@ -59,7 +58,6 @@ void main() {
         //loadShaders();
 
         window.preview.on("loadProgram", (args) => {
-            console.log("program compiled ok");
             let compileButton = document.getElementById("compile");
             if (compileButton) {
                 compileButton.style.color = "#00ff00";
@@ -67,7 +65,6 @@ void main() {
             }
         });
         window.preview.on("gl_error_compile", (arg) => {
-            console.log("program compiled fail");
             let compileButton = document.getElementById("compile");
             if (compileButton) {
                 compileButton.style.color = "#ff0000";
@@ -75,7 +72,6 @@ void main() {
             }
         });
         window.preview.on("gl_error_link", (arg) => {
-            console.log("program compiled fail");
             let compileButton = document.getElementById("compile");
             if (compileButton) {
                 compileButton.style.color = "#ff0000";
@@ -183,6 +179,22 @@ void main() {
         }, false);
         toolbar.appendChild(autoButton);
 
+        let loadButton = document.createElement("button");
+        loadButton.id = "load";
+        loadButton.textContent = "load...";
+        loadButton.addEventListener("click", function (event) {
+            loadShaderFromFile();
+        }, false);
+        toolbar.appendChild(loadButton);
+
+        let saveButton = document.createElement("button");
+        saveButton.id = "save";
+        saveButton.textContent = "save...";
+        saveButton.addEventListener("click", function (event) {
+            saveShaderToFile();
+        }, false);
+        toolbar.appendChild(saveButton);
+
         let compileButton = document.createElement("button");
         compileButton.id = "compile";
         compileButton.textContent = "compile";
@@ -196,7 +208,64 @@ void main() {
         let shaderCode = window.editor.getValue();
         window.preview.loadProgram(shaderCode);
     }
+
+    function uploadShaderCode(contents) {
+        let editor = window.editor;
+        if (editor) {
+            editor.setValue(contents);
+            compilePreview();
+        }
+    }
     
+    function clickElem(elem) {
+        // Thx user1601638 on Stack Overflow (6/6/2018 - https://stackoverflow.com/questions/13405129/javascript-create-and-save-file )
+        var eventMouse = document.createEvent("MouseEvents");
+        eventMouse.initMouseEvent("click", true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+        elem.dispatchEvent(eventMouse);
+    }
+
+    function loadShaderFromFile() {
+        let readFile = function(e) {
+            let file = e.target.files[0];
+            if (!file) {
+                return;
+            }
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                var contents = e.target.result;
+                fileInput.func(contents);
+                document.body.removeChild(fileInput);
+            }
+            reader.readAsText(file);
+        }
+        let fileInput = document.createElement("input");
+        fileInput.type = 'file';
+        fileInput.style.display = 'none';
+        fileInput.onchange = readFile;
+        fileInput.func = uploadShaderCode;
+        document.body.appendChild(fileInput);
+        clickElem(fileInput);
+    }
+
+    function saveShaderToFile() {
+        let editor = window.editor;
+        if (editor) {
+            let filename = "shader.txt";
+            let content = editor.getValue();
+            let pom = document.createElement('a');
+            pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+            pom.setAttribute('download', filename);
+            
+            if (document.createEvent) {
+                var event = document.createEvent('MouseEvents');
+                event.initEvent('click', true, true);
+                pom.dispatchEvent(event);
+            } else {
+                pom.click();
+            }
+        }
+    }
+
     function isCodeVisible() {
         if (window.editor) {
             return window.editor.getWrapperElement().style.display !== "none";

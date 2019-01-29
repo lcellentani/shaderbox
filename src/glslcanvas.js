@@ -100,7 +100,6 @@ void main(){
 
         let sandbox = this;
         function RenderLoop() {
-            console.log("RenderLoop!");
             if (sandbox.nMouse > 1) {
                 sandbox.setMouse(mouse);
             }
@@ -178,7 +177,6 @@ void main(){
 
         // Trigger event
         this.trigger('loadProgram', {});
-        console.log("loadProgram<<<");
 
         this.forceRender = true;
         this.render();
