@@ -64,6 +64,15 @@ button:hover {
     box-shadow: 0 0 2px #FFF;
 }
 
+span {
+    color: #ffffff;
+    background-color: transparent;
+    font-family: Monospace;
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: rgba(0, 0, 0, 1) 0px 1px 2px;
+}
+
 .CodeMirror {
     color: white;
     text-shadow: rgba(0, 0, 0, 1) 0px 1px 2px;

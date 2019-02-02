@@ -1,5 +1,18 @@
 import { GLSLCanvas } from './src/glslcanvas.js'
 
+let cNewFragShader = `
+precision mediump float;
+
+uniform vec3 iResolution;
+uniform float iTime;
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+    vec3 col = 0.5 + 0.5 * cos(iTime + uv.xyx + vec3(0, 2, 4));
+    gl_FragColor = vec4(col, 1.0);
+}`;
+
+
 window.addEventListener("hashchange", function() {
     init()
 }, false);
@@ -26,22 +39,10 @@ function init() {
     onWindowResize();
 
     function initPreview() {
-        let fragShader = `
-precision mediump float;
-
-uniform vec3 iResolution;
-uniform float iTime;
-
-void main() {
-    vec2 uv = gl_FragCoord.xy / iResolution.xy;
-    vec3 col = 0.5 + 0.5 * cos(iTime + uv.xyx + vec3(0, 2, 4));
-    gl_FragColor = vec4(col, 1.0);
-}`;
-
         let canvas = document.createElement("canvas");
         canvas.id = "canvas";
 		canvas.style.display = "block";
-        canvas.setAttribute("data-fragment", fragShader);
+        canvas.setAttribute("data-fragment", cNewFragShader);
         document.body.appendChild(canvas);
 
         window.preview = new GLSLCanvas(canvas);
@@ -78,8 +79,11 @@ void main() {
                 compileButton.textContent = "compiled failed";
             }
         });
+        window.preview.on("render", (arg) => {
+            updateView(arg);
+        })
 
-        window.editor.setValue(fragShader);
+        window.editor.setValue(cNewFragShader);
         compilePreview();
     }
 
@@ -140,30 +144,82 @@ void main() {
     }
 
     function initToolbar() {
+        let playerbar = document.createElement("div");
+        playerbar.id = 'playerbar';
+        playerbar.style.position = "absolute";
+        playerbar.style.top = "60px";
+        playerbar.style.left = "25px";
+        document.body.appendChild(playerbar);
+        window.playerbar = playerbar;
+
+        let resetButton = document.createElement("button");
+        resetButton.id = "reset";
+        resetButton.innerHTML = '<i class="fa fa-step-backward" aria-hidden="true"></i>';
+        resetButton.addEventListener("click", function (event) {
+            resetPlayback();
+        }, false);
+        playerbar.appendChild(resetButton);
+
+        let playButton = document.createElement("button");
+        playButton.id = "play";
+        playButton.innerHTML = '<i class="fa fa-pause" aria-hidden="true"></i>';
+        playButton.addEventListener("click", function (event) {
+            togglePlayback();
+        }, false);
+        playerbar.appendChild(playButton);
+
+        let dummySpace = document.createElement("span");
+        dummySpace.innerHTML = '<i class="fa fa-ellipsis-v" size="3px" aria-hidden="true" style="padding-left:6px;padding-right:8px;"></i>';
+        playerbar.appendChild(dummySpace);
+
+        let playerTimeText = document.createElement("span");
+        playerTimeText.id = "playerbartext";
+        playerTimeText.innerHTML = "0.0";
+        playerbar.appendChild(playerTimeText);
+
         let toolbar = document.createElement("div");
+        toolbar.id = 'toolbar';
         toolbar.style.position = "absolute";
         toolbar.style.top = "25px";
         toolbar.style.left = "25px";
         document.body.appendChild(toolbar);
+        window.toolbar = toolbar;
 
         let hideButton = document.createElement("button");
         hideButton.textContent = "hide code";
         hideButton.addEventListener("click", function (event) {
             let compileButton = document.getElementById("compile");
             let autoButton = document.getElementById("auto");
+            let saveButton = document.getElementById("save");
+            let loadButton = document.getElementById("load");
+            let newButton = document.getElementById("new");
             if (isCodeVisible()) {
                 hideButton.textContent = "show code";
                 window.editor.getWrapperElement().style.display = "none";
                 compileButton.style.visibility = "hidden";
                 autoButton.style.visibility = "hidden";
+                saveButton.style.visibility = "hidden";
+                loadButton.style.visibility = "hidden";
+                newButton.style.visibility = "hidden";
             } else {
                 hideButton.textContent = "hide code";
                 window.editor.getWrapperElement().style.display = "";
                 compileButton.style.visibility = "visible";
                 autoButton.style.visibility = "visible";
+                saveButton.style.visibility = "visible";
+                loadButton.style.visibility = "visible";
+                newButton.style.visibility = "visible";
             }
         }, false);
         toolbar.appendChild(hideButton);
+        
+        let newButton = document.createElement("button");
+        newButton.id = "new";
+        newButton.textContent = "new";
+        newButton.addEventListener("click", function (event) {
+            newShader();
+        }, false);
+        toolbar.appendChild(newButton);
         
         let autoButton = document.createElement("button");
         autoButton.id = "auto";
@@ -179,22 +235,6 @@ void main() {
         }, false);
         toolbar.appendChild(autoButton);
 
-        let loadButton = document.createElement("button");
-        loadButton.id = "load";
-        loadButton.textContent = "load...";
-        loadButton.addEventListener("click", function (event) {
-            loadShaderFromFile();
-        }, false);
-        toolbar.appendChild(loadButton);
-
-        let saveButton = document.createElement("button");
-        saveButton.id = "save";
-        saveButton.textContent = "save...";
-        saveButton.addEventListener("click", function (event) {
-            saveShaderToFile();
-        }, false);
-        toolbar.appendChild(saveButton);
-
         let compileButton = document.createElement("button");
         compileButton.id = "compile";
         compileButton.textContent = "compile";
@@ -202,6 +242,69 @@ void main() {
             compilePreview();
         }, false);
         toolbar.appendChild(compileButton);
+
+        let rightside = document.createElement('div');
+        rightside.style.cssFloat = 'right';
+        toolbar.appendChild(rightside);
+
+        let loadButton = document.createElement("button");
+        loadButton.id = "load";
+        loadButton.textContent = "load...";
+        loadButton.addEventListener("click", function (event) {
+            loadShaderFromFile();
+        }, false);
+        rightside.appendChild(loadButton);
+
+        let saveButton = document.createElement("button");
+        saveButton.id = "save";
+        saveButton.textContent = "save...";
+        saveButton.addEventListener("click", function (event) {
+            saveShaderToFile();
+        }, false);
+        rightside.appendChild(saveButton);
+    }
+
+    function updateView(arg) {
+        console.log("updateView");
+        let playerbartext = document.getElementById("playerbartext");
+        let preview = window.preview;
+        if (playerbartext && preview) {
+            playerbartext.innerHTML = preview.time.toFixed(2) + " (" + (preview.timeDelta * 1000.0).toFixed(1) + " ms)";
+        }
+    }
+
+    function newShader() {
+        let editor = window.editor;
+        if (editor) {
+            window.editor.setValue(cNewFragShader);
+            compilePreview();
+
+            resetPlayback();
+        }
+    }
+
+    function resetPlayback() {
+        if (window.preview) {
+            window.preview.resetPlayback();
+            let playButton = document.getElementById('play');
+            if (playButton) {
+                playButton.innerHTML = '<i class="fa fa-pause" aria-hidden="true"></i>';   
+            }
+        }
+    }
+
+    function togglePlayback() {
+        let playButton = document.getElementById('play');
+        let preview = window.preview;
+        if (preview) {
+            if (preview.paused) {
+                preview.play();
+                playButton.innerHTML = '<i class="fa fa-pause" aria-hidden="true"></i>';
+            } else {
+                preview.pause();
+                playButton.innerHTML = '<i class="fa fa-play" aria-hidden="true"></i>';
+            }
+        }
     }
 
     function compilePreview() {
@@ -213,7 +316,10 @@ void main() {
         let editor = window.editor;
         if (editor) {
             editor.setValue(contents);
+            editor.refresh();
             compilePreview();
+
+            resetPlayback();
         }
     }
     
@@ -250,7 +356,7 @@ void main() {
     function saveShaderToFile() {
         let editor = window.editor;
         if (editor) {
-            let filename = "shader.txt";
+            let filename = "untitled.shader";
             let content = editor.getValue();
             let pom = document.createElement('a');
             pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
@@ -324,7 +430,7 @@ void main() {
         if (resizer) {
             let isMaxWidth = ((resizer.currentWidth === resizer.maxWidth) || (resizer.currentWidth === resizer.minWidth));
             let isMaxHeight = ((resizer.currentHeight === resizer.maxHeight) || (resizer.currentHeight === resizer.minHeight));
-        
+
             resizer.isResizing = false;
             resizer.maxWidth = window.innerWidth - 75;
             resizer.maxHeight = window.innerHeight - 125;
@@ -338,9 +444,14 @@ void main() {
             if (resizer.currentHeight < resizer.minHeight) { resizer.currentHeight = resizer.minHeight; }
         }
 
+        let toolbar = window.toolbar;
+        if (toolbar) {
+            toolbar.style.width = window.innerWidth - 47 + 'px';
+        }
+
         let editor = window.editor;
         if (editor) {
-            editor.getWrapperElement().style.top = "75px";
+            editor.getWrapperElement().style.top = "95px";
             editor.getWrapperElement().style.left = "25px";
             editor.getWrapperElement().style.width = resizer.currentWidth + "px";
             editor.getWrapperElement().style.height = resizer.currentHeight + "px";

@@ -58,10 +58,7 @@ void main(){
             return;
         }
         this.gl = gl;
-        this.timeLoad = this.timePrev = performance.now();
-        this.timeDelta = 0.0;
-        this.forceRender = true;
-        this.paused = false;
+        this.resetPlayback();
 
         canvas.style.backgroundColor = contextOptions.backgroundColor || 'rgba(1, 1, 1, 0)';
 
@@ -212,11 +209,23 @@ void main(){
 
     }
 
+    isPlayig() {
+        return this.paused;
+    }
+
     pause() {
         this.paused = true;
     }
 
     play() {
+        this.paused = false;
+    }
+
+    resetPlayback() {
+        this.timeLoad = this.timePrev = this.timeNow = performance.now();
+        this.time = 0.0;
+        this.timeDelta = 0.0;
+        this.forceRender = true;
         this.paused = false;
     }
 
@@ -258,18 +267,19 @@ void main(){
         if (!this.program) {
             return;
         }
+        this.timePrev = this.timeNow;
+        this.timeNow = performance.now(); 
         if (this.forceRender  || (this.visible && !this.paused)) {
             let date = new Date();
-            let now = performance.now();
-            this.timeDelta = (now - this.timePrev) / 1000.0;
-            this.timePrev = now;
+            this.timeDelta = (this.timeNow - this.timePrev) / 1000.0;
+            this.time += this.timeDelta;
             this.frameCount++;
 
             if (this.nDelta > 1) {
                 this.uniform('1f', 'float', 'iTimeDelta', this.timeDelta);
             }
             if (this.nTime > 1 ) {
-                this.uniform('1f', 'float', 'iTime', (now - this.timeLoad) / 1000.0);
+                this.uniform('1f', 'float', 'iTime', this.time);
             }
             if (this.nDate) {
                 this.uniform('4f', 'float', 'iDate', date.getFullYear(), date.getMonth(), date.getDate(), date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds() + date.getMilliseconds() * 0.001 );
@@ -279,7 +289,7 @@ void main(){
             }
             this.uniform('3f', 'vec3', 'iResolution', this.canvas.width, this.canvas.height, 0);
             
-            var factor = Math.sin(((now - this.timeLoad) * 0.2) * Math.PI/180);
+            var factor = Math.sin(((this.time) * 0.2) * Math.PI/180);
             this.gl.clearColor(factor * 0.7 + 0.3, factor * 0.7 + 0.3, 0.0, 1.0);
             this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
