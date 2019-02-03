@@ -1,5 +1,7 @@
 import { GLSLCanvas } from './src/glslcanvas.js'
 
+let cVersion = '(ver 0.1)';
+
 let cNewFragShader = `
 precision mediump float;
 
@@ -246,6 +248,13 @@ function init() {
         let rightside = document.createElement('div');
         rightside.style.cssFloat = 'right';
         toolbar.appendChild(rightside);
+
+        let versionText = document.createElement("span");
+        versionText.id = "playerbartext";
+        versionText.style.fontSize = "11px";
+        versionText.style.paddingRight = "10px";
+        versionText.innerHTML = cVersion;
+        rightside.appendChild(versionText);
 
         let loadButton = document.createElement("button");
         loadButton.id = "load";
