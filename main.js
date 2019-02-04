@@ -1,6 +1,10 @@
 import { GLSLCanvas } from './src/glslcanvas.js'
 
-let cVersion = '(ver 0.1)';
+let cVersion = '(ver 0.3)';
+let cPreviewInitialX = 25;
+let cPreviewInitialY = 95;
+let cPreviewInitialWidth = 640;
+let cPreviewInitialHeight = 384;
 
 let cNewFragShader = `
 precision mediump float;
@@ -43,7 +47,7 @@ function init() {
     function initPreview() {
         let canvas = document.createElement("canvas");
         canvas.id = "canvas";
-		canvas.style.display = "block";
+        canvas.style.position = "absolute";
         canvas.setAttribute("data-fragment", cNewFragShader);
         document.body.appendChild(canvas);
 
@@ -122,25 +126,8 @@ function init() {
         temp.maxWidth = 100;
         temp.maxHeight = 100;
         temp.element = document.createElement("div");
-        temp.element.className = "resizer";
         editor.getWrapperElement().appendChild(temp.element);
         window.resizer = temp;
-    
-        resizer.element.addEventListener("mousedown", function(event) {
-            dragStarted(event);
-        }, false);
-    
-        document.addEventListener("mouseup", function(event) {
-            dragEnded(event);
-        }, false);
-    
-        document.addEventListener("mouseleave", function(event) {
-            dragEnded(event)
-        }, false);
-    
-        document.addEventListener("mousemove", function (event) {
-            dragMoving(event);
-        }, false);
     
         window.addEventListener("resize", onWindowResize, false);
     }
@@ -441,7 +428,7 @@ function init() {
             let isMaxHeight = ((resizer.currentHeight === resizer.maxHeight) || (resizer.currentHeight === resizer.minHeight));
 
             resizer.isResizing = false;
-            resizer.maxWidth = window.innerWidth - 75;
+            resizer.maxWidth = window.innerWidth - 75 - cPreviewInitialWidth;
             resizer.maxHeight = window.innerHeight - 125;
             if (isMaxWidth || (resizer.currentWidth > resizer.maxWidth)) {
                 resizer.currentWidth = resizer.maxWidth;
@@ -460,16 +447,19 @@ function init() {
 
         let editor = window.editor;
         if (editor) {
-            editor.getWrapperElement().style.top = "95px";
-            editor.getWrapperElement().style.left = "25px";
+            editor.getWrapperElement().style.top = cPreviewInitialY + "px";
+            editor.getWrapperElement().style.left = (cPreviewInitialWidth + cPreviewInitialX + 10) + "px";
             editor.getWrapperElement().style.width = resizer.currentWidth + "px";
             editor.getWrapperElement().style.height = resizer.currentHeight + "px";
         }
 
         let canvas = document.getElementById("canvas");
         if (canvas) {
-            canvas.style.width = window.innerWidth + "px";
-            canvas.style.height = window.innerHeight + "px";
+            canvas.style.top = cPreviewInitialY + "px";
+            canvas.style.left = cPreviewInitialX + "px";
+            canvas.style.width = cPreviewInitialWidth + "px";
+            canvas.style.height = cPreviewInitialHeight + "px";
+            canvas.style.borderRadius = "5px";
         }
     }
 }
