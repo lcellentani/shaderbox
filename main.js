@@ -1,6 +1,6 @@
 import { GLSLCanvas } from './src/glslcanvas.js'
 
-let cVersion = '(ver 0.3)';
+let cVersion = '(ver 0.4)';
 let cPreviewInitialX = 25;
 let cPreviewInitialY = 95;
 let cPreviewInitialWidth = 640;
@@ -12,10 +12,15 @@ precision mediump float;
 uniform vec3 iResolution;
 uniform float iTime;
 
-void main() {
-    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = fragCoord / iResolution.xy;
     vec3 col = 0.5 + 0.5 * cos(iTime + uv.xyx + vec3(0, 2, 4));
-    gl_FragColor = vec4(col, 1.0);
+    fragColor = vec4(col, 1.0);
+}
+
+void main() {
+    mainImage(gl_FragColor, gl_FragCoord.xy);
+    gl_FragColor.a = 1.0;
 }`;
 
 
